@@ -7,7 +7,7 @@ app = Flask(__name__)
 @app.route('/myapi', methods=['POST'])
 def my_api_endpoint():
     data = request.json
-    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=AIzaSyC8tc7m4TkAmfOx9cu_bckCc62ZgVDzSBQ"
+    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key="
     question = data.get("question")
     OutOf = data.get("OutOf")
     expected_answer = data.get("CorrectAnswer")
