@@ -1,18 +1,21 @@
-from flask import Flask, request, jsonify
+import streamlit as st
 import requests
 import json
 
-app = Flask(__name__)
+# Streamlit widgets to get user input
+question = st.text_input("Question")
+OutOf = st.text_input("Out of")
+expected_answer = st.text_input("Correct Answer")
+batch_student_answers = st.text_area("Batch Student Answers (JSON format)")
+batch_student_ids = st.text_area("Batch Student IDs (JSON format)")
 
-@app.route('/myapi', methods=['POST'])
-def my_api_endpoint():
-    data = request.json
-    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key="
-    question = data.get("question")
-    OutOf = data.get("OutOf")
-    expected_answer = data.get("CorrectAnswer")
-    batch_student_answers = data.get("batch_student_answers")
-    batch_student_ids = data.get("batch_student_ids")
+if st.button('Submit'):
+    try:
+        batch_student_answers = json.loads(batch_student_answers)
+        batch_student_ids = json.loads(batch_student_ids)
+    except json.JSONDecodeError as e:
+        st.error(f"Error decoding JSON: {str(e)}")
+        st.stop()
 
     expected_format = {
         "grades": {id_: {"score": "int"} for id_ in batch_student_ids}
@@ -36,23 +39,22 @@ def my_api_endpoint():
                 {"text": "strict rules : Kindly follow keys and ID's very efficiently as they are non changeable entities, Always output only json object and no other trailing or leading characters."}
             ]
         }
-                ],
+    ],
     "generationConfig": {
-        "response_mime_type": "application/json"}}
-
+        "response_mime_type": "application/json"}
+    }
 
     headers = {"Content-Type": "application/json"}
+    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=AIzaSyC8tc7m4TkAmfOx9cu_bckCc62ZgVDzSBQ"
     response = requests.post(url, headers=headers, json=payload)
 
-    try:
-        generated_data = json.loads(response.text)
-    except json.JSONDecodeError as e:
-        return jsonify({"error": "Failed to decode JSON.", "details": str(e)})
-    except KeyError as e:
-        return jsonify({"error": "Key error in processing response data.", "details": str(e)})
-
-    if 'error' in generated_data:
-        return jsonify({"error": "API error response.", "details": generated_data['error']})
-
-    # Assuming the API returns the expected format directly
-    return jsonify(generated_data)
+    if response.status_code == 200:
+        try:
+            generated_data = json.loads(response.text)
+            st.json(generated_data)
+        except json.JSONDecodeError as e:
+            st.error(f"Failed to decode JSON: {str(e)}")
+        except KeyError as e:
+            st.error(f"Key error in processing response data: {str(e)}")
+    else:
+        st.error(f"Failed to contact API: {response.status_code}")
